@@ -9,7 +9,7 @@ import {
   Optional,
   UnauthorizedException
 } from '@nestjs/common';
-import * as passport from 'passport';
+import passport from '@fastify/passport';
 import { Type } from './interfaces';
 import {
   AuthModuleOptions,
@@ -113,14 +113,22 @@ function createAuthGuard(type?: string | string[]): Type<IAuthGuard> {
 
 const createPassportContext =
   (request: any, response: any) =>
-  (type: string | string[], options: any, callback: Function) =>
-    new Promise<void>((resolve, reject) =>
-      passport.authenticate(type, options, (err, user, info, status) => {
-        try {
-          request.authInfo = info;
-          return resolve(callback(err, user, info, status));
-        } catch (err) {
-          reject(err);
-        }
-      })(request, response, (err: any) => (err ? reject(err) : resolve()))
-    );
+  async (type: string | string[], options: any, callback: Function) =>
+    new Promise((resolve, reject) => {
+      try {
+        return request.passport.authenticate(
+          type,
+          options,
+          (request, _response, err, user, info, status) => {
+            try {
+              request.authInfo = info;
+              return resolve(callback(err, user, info, status));
+            } catch (err) {
+              reject(err);
+            }
+          }
+        )(request, response);
+      } catch (error) {
+        reject(error);
+      }
+    });

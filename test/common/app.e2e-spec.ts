@@ -1,4 +1,11 @@
+import fastifyCookie from '@fastify/cookie';
+import fastifySession from '@fastify/session';
+import fastifyPassport from '@fastify/passport';
 import { INestApplication } from '@nestjs/common';
+import {
+  FastifyAdapter,
+  NestFastifyApplication
+} from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import { spec, request } from 'pactum';
 import { AppModule as WithRegisterModule } from '../with-register/app.module';
@@ -9,13 +16,23 @@ describe.each`
   ${WithRegisterModule}    | ${'with'}
   ${WithoutRegisterModule} | ${'without'}
 `('Passport Module $RegisterUse register()', ({ AppModule }) => {
-  let app: INestApplication;
+  let app: NestFastifyApplication;
 
   beforeAll(async () => {
     const modRef = await Test.createTestingModule({
       imports: [AppModule]
     }).compile();
-    app = modRef.createNestApplication();
+    app = modRef.createNestApplication<NestFastifyApplication>(
+      new FastifyAdapter()
+    );
+    const fastifyInstance = app.getHttpAdapter().getInstance();
+    await fastifyInstance.register(fastifyCookie);
+    await fastifyInstance.register(fastifySession, {
+      secret: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxs3cr3t'
+    });
+    await fastifyInstance.register(fastifyPassport.initialize());
+    await fastifyInstance.register(fastifyPassport.secureSession());
+
     await app.listen(0);
     const url = (await app.getUrl()).replace('[::1]', 'localhost');
     request.setBaseUrl(url);

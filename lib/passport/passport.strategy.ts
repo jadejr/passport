@@ -1,4 +1,4 @@
-import * as passport from 'passport';
+import passport from '@fastify/passport';
 import { Type, WithoutCallback } from '../interfaces';
 
 export type AllConstructorParameters<T> = T extends {
