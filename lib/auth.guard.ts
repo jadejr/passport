@@ -87,11 +87,7 @@ function createAuthGuard(type?: string | string[]): Type<IAuthGuard> {
       request: TRequest
     ): Promise<void> {
       const user = request[this.options.property || defaultOptions.property];
-      await new Promise<void>((resolve, reject) =>
-        request.logIn(user, this.options, (err) =>
-          err ? reject(err) : resolve()
-        )
-      );
+      await request.logIn(user, this.options);
     }
 
     handleRequest(err, user, info, context, status): TUser {
